@@ -53,7 +53,7 @@ spec:
             - secretRef:
                 name: {{ .Values.puppetserver.masters.extraEnvSecret }}
           {{- end }}
-          command: [ "sh", "-c" ]
+          command: [ "sh", "-ec" ]
           args:
             - echo "create folder";
               mkdir -p /etc/puppetlabs/puppet/eyaml/keys;
@@ -68,9 +68,13 @@ spec:
               cp /tmp/puppet/configmap/eyaml/*public_key.pkcs7.pem /etc/puppetlabs/puppet/eyaml/keys/;
               {{- end }}
               echo "Update files owner to puppet:puppet in /etc/puppetlabs/";
+              {{- if not .Values.global.rootless }}
               chown -R puppet:puppet /etc/puppetlabs/ -v;
+              {{- end }}
               echo "Update files owner to puppet:puppet in /opt/puppetlabs/server/data/puppetserver/";
+              {{- if not .Values.global.rootless }}
               chown -R puppet:puppet /opt/puppetlabs/server/data/puppetserver/ -v;
+              {{- end }}
               {{- if .Values.puppetserver.extraInitArgs }}
               {{- .Values.puppetserver.extraInitArgs | nindent 14 }}
               {{- end }}
@@ -106,21 +110,26 @@ spec:
         - name: copy-ro-puppetserver-certs
           image: "{{.Values.puppetserver.image}}:{{.Values.puppetserver.tag}}"
           imagePullPolicy: "{{.Values.puppetserver.pullPolicy}}"
-          command: [ "sh", "-c" ]
+          command: [ "sh", "-ec" ]
           args:
-            - mkdir -p /etc/puppetlabs/puppet/ssl;
+            - umask 0007;
+              mkdir -p /etc/puppetlabs/puppet/ssl;
               {{- if .Values.singleCA.enabled }}
               mkdir -p /etc/puppetlabs/puppet/ssl/certs/;
               mkdir -p /etc/puppetlabs/puppet/ssl/private_keys/;
               cp /tmp/puppetserver/ca.pem /etc/puppetlabs/puppet/ssl/certs/ca.pem;
               cp /tmp/puppetserver/{{ template "singleCA.puppetserver.certname" . }}.pem /etc/puppetlabs/puppet/ssl/certs/puppet.pem;
               cp /tmp/puppetserver/{{ template "singleCA.puppetserver.certname" . }}.key /etc/puppetlabs/puppet/ssl/private_keys/puppet.pem;
+              {{- if not .Values.global.rootless }}
               chown puppet:puppet /etc/puppetlabs/puppet/ssl/certs/puppet.pem /etc/puppetlabs/puppet/ssl/private_keys/puppet.pem /etc/puppetlabs/puppet/ssl/certs/ca.pem;
+              {{- end }}
               {{- if .Values.singleCA.crl.asSidecar }}
               cp /tmp/crl/crl_entrypoint.sh /etc/puppetlabs/puppet/ssl/crl_entrypoint.sh;
               cp /tmp/crl/crl_cronjob.sh /etc/puppetlabs/puppet/ssl/crl_cronjob.sh;
               cp /tmp/crl/crl.sh /etc/puppetlabs/puppet/ssl/crl.sh;
+              {{- if not .Values.global.rootless }}
               chown puppet:puppet /etc/puppetlabs/puppet/ssl/crl_entrypoint.sh /etc/puppetlabs/puppet/ssl/crl_cronjob.sh /etc/puppetlabs/puppet/ssl/crl.sh;
+              {{- end }}
               chmod +x /etc/puppetlabs/puppet/ssl/crl_entrypoint.sh /etc/puppetlabs/puppet/ssl/crl_cronjob.sh /etc/puppetlabs/puppet/ssl/crl.sh;
               {{- else }}
               /tmp/crl/crl_kubernetes_cronjob.sh;
@@ -158,9 +167,10 @@ spec:
         - name: copy-ro-puppetdb-certs
           image: "{{.Values.puppetdb.image}}:{{.Values.puppetdb.tag}}"
           imagePullPolicy: "{{.Values.puppetdb.pullPolicy}}"
-          command: [ "sh", "-c" ]
+          command: [ "sh", "-ec" ]
           args:
-            - mkdir -p /opt/puppetlabs/server/data/puppetdb/certs;
+            - umask 0007;
+              mkdir -p /opt/puppetlabs/server/data/puppetdb/certs;
               {{- if .Values.singleCA.enabled }}
               mkdir -p /opt/puppetlabs/server/data/puppetdb/certs/certs/;
               mkdir -p /opt/puppetlabs/server/data/puppetdb/certs/private_keys/;
@@ -168,12 +178,16 @@ spec:
               cp /tmp/puppetdb/ca.pem /opt/puppetlabs/server/data/puppetdb/certs/certs/ca.pem;
               cp /tmp/puppetdb/{{ template "singleCA.puppetdb.certname" . }}.pem /opt/puppetlabs/server/data/puppetdb/certs/certs/{{ template "singleCA.puppetdb.certname" . }}.pem;
               cp /tmp/puppetdb/{{ template "singleCA.puppetdb.certname" . }}.key /opt/puppetlabs/server/data/puppetdb/certs/private_keys/{{ template "singleCA.puppetdb.certname" . }}.pem;
+              {{- if not .Values.global.rootless }}
               chown puppetdb:puppetdb /opt/puppetlabs/server/data/puppetdb/certs/certs/ca.pem /opt/puppetlabs/server/data/puppetdb/certs/certs/{{ template "singleCA.puppetdb.certname" . }}.pem /opt/puppetlabs/server/data/puppetdb/certs/private_keys/{{ template "singleCA.puppetdb.certname" . }}.pem;
+              {{- end }}
               {{- if .Values.singleCA.crl.asSidecar }}
               cp /tmp/crl/crl_entrypoint.sh /opt/puppetlabs/server/data/puppetdb/scripts/crl_entrypoint.sh;
               cp /tmp/crl/crl_cronjob.sh /opt/puppetlabs/server/data/puppetdb/scripts/crl_cronjob.sh;
               cp /tmp/crl/crl.sh /opt/puppetlabs/server/data/puppetdb/scripts/crl.sh;
+              {{- if not .Values.global.rootless }}
               chown -R puppetdb:puppetdb /opt/puppetlabs/server/data/puppetdb/scripts;
+              {{- end }}
               chmod +x /opt/puppetlabs/server/data/puppetdb/scripts/*.sh;
               ls -la /opt/puppetlabs/server/data/puppetdb/scripts/;
               {{- else }}

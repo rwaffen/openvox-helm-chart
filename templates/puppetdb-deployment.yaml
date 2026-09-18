@@ -51,11 +51,16 @@ spec:
           image: "{{.Values.global.curl.image}}:{{.Values.global.curl.tag}}"
           imagePullPolicy: {{.Values.global.curl.imagePullPolicy}}
           {{- include "openvox.securityContext" (dict "root" . "key" "database-init" "pod" false "legacy" (include "openvox.security.rootInit" . | fromYaml)) | nindent 10 }}
-          command: [ "sh", "-c" ]
+          command: [ "sh", "-ec" ]
           args:
-            - mkdir -p /opt/puppetlabs/server/data/puppetdb/logs;
+            - umask 0007;
+              mkdir -p /opt/puppetlabs/server/data/puppetdb/logs;
+              {{- if not .Values.global.rootless }}
               chown -R {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /opt/puppetlabs/server/data/puppetdb/logs;
+              {{- end }}
+              {{- if not .Values.global.rootless }}
               chown -R {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /opt/puppetlabs/server/data/puppetdb;
+              {{- end }}
           resources:
             requests:
               cpu: 20m

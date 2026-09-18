@@ -13,6 +13,7 @@ global:
     overrides: {} # Per-component overrides; see docs/security-contexts.md.
     omit: [] # Component names whose securityContext is managed externally.
 
+  rootless: false # Use UID-compatible images and skip ownership changes.
   runAsNonRoot: false
 
   imagePullSecrets:
