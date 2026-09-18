@@ -1,0 +1,40 @@
+suite: chart-native PostgreSQL
+templates:
+  - custom-postgresql.yaml
+tests:
+  - it: rejects two database backends
+    set:
+      customPostgresql.enabled: true
+    asserts:
+      - failedTemplate: {errorMessage: Enable either customPostgresql or the postgresql subchart}
+  - it: requires an existing credentials secret
+    set:
+      postgresql.enabled: false
+      customPostgresql.enabled: true
+    asserts:
+      - failedTemplate: {errorMessage: customPostgresql.auth.existingSecret is required}
+  - it: uses a persistent database with SCC-assigned identity
+    set:
+      postgresql.enabled: false
+      customPostgresql.enabled: true
+      customPostgresql.image.repository: registry.example.test/openvox-postgresql
+      customPostgresql.image.tag: "16"
+      customPostgresql.auth.existingSecret: database-credentials
+    asserts:
+      - hasDocuments: {count: 5}
+      - isKind: {of: StatefulSet}
+        documentIndex: 3
+      - notExists:
+          path: spec.template.spec.securityContext.runAsUser
+        documentIndex: 3
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
+          value: [ALL]
+        documentIndex: 3
+  - it: rejects mismatched database host overrides
+    set:
+      postgresql.enabled: false
+      customPostgresql.enabled: true
+      puppetdb.extraEnv.OPENVOXDB_POSTGRES_HOSTNAME: other-database.example.test
+    asserts:
+      - failedTemplate: {errorMessage: Do not override OPENVOXDB_POSTGRES_HOSTNAME when customPostgresql is enabled}

@@ -1348,3 +1348,37 @@ metrics:
         #   foo: bar
         # namespace: "another-namespace"
         # namespaceSelector: {}
+
+# Chart-native PostgreSQL using images/postgresql; mutually exclusive with the Bitnami subchart.
+customPostgresql:
+  enabled: false
+  networkPolicy:
+    enabled: true
+  image:
+    repository: ""
+    tag: ""
+    pullPolicy: IfNotPresent
+  auth:
+    existingSecret: "" # Required; keys: username, password, postgres-password.
+    usernameKey: username
+    passwordKey: password
+    adminPasswordKey: postgres-password
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: [ALL]
+  serviceAccount:
+    create: true
+    name: ""
+  persistence:
+    existingClaim: ""
+    size: 10Gi
+    storageClass: ""
+    accessModes: [ReadWriteOnce]
+    annotations:
+      helm.sh/resource-policy: keep
+  resources: {}
