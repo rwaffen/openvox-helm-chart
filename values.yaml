@@ -6,6 +6,7 @@
 ##
 ---
 global:
+  rootless: false # Use UID-compatible images and skip ownership changes.
   runAsNonRoot: false
 
   imagePullSecrets:

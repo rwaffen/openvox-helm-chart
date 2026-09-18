@@ -124,10 +124,10 @@ should include openvoxview sidecar when enabled:
           imagePullSecrets: null
           initContainers:
             - args:
-                - mkdir -p /opt/puppetlabs/server/data/puppetdb/logs; chown -R 64604:64604 /opt/puppetlabs/server/data/puppetdb/logs; chown -R 64604:64604 /opt/puppetlabs/server/data/puppetdb;
+                - umask 0007; mkdir -p /opt/puppetlabs/server/data/puppetdb/logs; chown -R 64604:64604 /opt/puppetlabs/server/data/puppetdb/logs; chown -R 64604:64604 /opt/puppetlabs/server/data/puppetdb;
               command:
                 - sh
-                - -c
+                - -ec
               image: curlimages/curl:8.21.0
               imagePullPolicy: IfNotPresent
               name: setup-dirs

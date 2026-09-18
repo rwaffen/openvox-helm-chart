@@ -57,6 +57,8 @@ spec:
             resources:
               {{- toYaml .Values.puppetserver.masters.backup.resources | nindent 14 }}
             env:
+            - name: RESTIC_CACHE_DIR
+              value: /tmp/restic-cache
             - name: RESTIC_REPOSITORY
               value: {{ .Values.puppetserver.masters.backup.restic.repository | quote }}
             {{- if not .Values.puppetserver.masters.backup.restic.existingSecret }}

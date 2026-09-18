@@ -1,0 +1,3 @@
+{{- if and .Values.global.rootless .Values.global.runAsNonRoot -}}
+{{- fail "global.rootless uses the image entrypoint; leave the legacy global.runAsNonRoot setting false" -}}
+{{- end -}}

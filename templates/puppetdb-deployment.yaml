@@ -68,11 +68,16 @@ spec:
                 - DAC_OVERRIDE
                 - AUDIT_WRITE
                 - FOWNER
-          command: [ "sh", "-c" ]
+          command: [ "sh", "-ec" ]
           args:
-            - mkdir -p /opt/puppetlabs/server/data/puppetdb/logs;
+            - umask 0007;
+              mkdir -p /opt/puppetlabs/server/data/puppetdb/logs;
+              {{- if not .Values.global.rootless }}
               chown -R {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /opt/puppetlabs/server/data/puppetdb/logs;
+              {{- end }}
+              {{- if not .Values.global.rootless }}
               chown -R {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /opt/puppetlabs/server/data/puppetdb;
+              {{- end }}
           resources:
             requests:
               cpu: 20m

@@ -105,10 +105,10 @@ manifest should match snapshot:
           imagePullSecrets: null
           initContainers:
             - args:
-                - mkdir -p /etc/puppetlabs/puppet/eyaml/keys; mkdir -p /etc/puppetlabs/code/environments; mkdir -p /etc/puppetlabs/puppet/manifests; cp /tmp/puppet/configmap/site.pp /etc/puppetlabs/puppet/manifests/site.pp; chown 64604:64604 /etc/puppetlabs/puppet/manifests/site.pp; mkdir -p /opt/puppetlabs/server/data/puppetserver/dropsonde/bin/; touch /opt/puppetlabs/server/data/puppetserver/dropsonde/bin/dropsonde; chown 64604:64604 -R /opt/puppetlabs/server/data/puppetserver/; chmod +x /etc/puppetlabs/puppetserver; chown -R 64604:64604 /etc/puppetlabs;
+                - umask 0007; mkdir -p /etc/puppetlabs/puppet/eyaml/keys; mkdir -p /etc/puppetlabs/code/environments; mkdir -p /etc/puppetlabs/puppet/manifests; cp /tmp/puppet/configmap/site.pp /etc/puppetlabs/puppet/manifests/site.pp; chown 64604:64604 /etc/puppetlabs/puppet/manifests/site.pp; mkdir -p /opt/puppetlabs/server/data/puppetserver/dropsonde/bin/; touch /opt/puppetlabs/server/data/puppetserver/dropsonde/bin/dropsonde; chown 64604:64604 -R /opt/puppetlabs/server/data/puppetserver/; chmod +x /etc/puppetlabs/puppetserver; chown -R 64604:64604 /etc/puppetlabs;
               command:
                 - sh
-                - -c
+                - -ec
               env: null
               envFrom: null
               image: ghcr.io/openvoxproject/openvoxserver:8.15.2-main

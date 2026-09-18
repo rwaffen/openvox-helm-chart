@@ -86,9 +86,10 @@ spec:
             - secretRef:
                 name: {{ .Values.puppetserver.compilers.extraEnvSecret }}
           {{- end }}
-          command: [ "sh", "-c" ]
+          command: [ "sh", "-ec" ]
           args:
-            - mkdir -p /etc/puppetlabs/puppet/eyaml/keys;
+            - umask 0007;
+              mkdir -p /etc/puppetlabs/puppet/eyaml/keys;
               mkdir -p /etc/puppetlabs/code/environments;
               mkdir -p /etc/puppetlabs/puppet/manifests;
               {{- if .Values.r10k.asSidecar }}
@@ -97,38 +98,59 @@ spec:
               cp /tmp/puppet/configmap/r10k_code_entrypoint.sh /etc/puppetlabs/puppet/r10k_code_entrypoint.sh;
               cp /tmp/puppet/configmap/r10k_code_cronjob.sh /etc/puppetlabs/puppet/r10k_code_cronjob.sh;
               cp /tmp/puppet/configmap/r10k_code.yaml /etc/puppetlabs/puppet/r10k_code.yaml;
+              {{- if not .Values.global.rootless }}
               chown {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /etc/puppetlabs/puppet/r10k_code_entrypoint.sh /etc/puppetlabs/puppet/r10k_code_cronjob.sh /etc/puppetlabs/puppet/r10k_code.yaml;
+              {{- end }}
               chmod +x /etc/puppetlabs/puppet/r10k_code_entrypoint.sh /etc/puppetlabs/puppet/r10k_code_cronjob.sh;
               {{- end }}
               {{- if (include "hiera.enable" .) }}
               cp /tmp/puppet/configmap/r10k_hiera_entrypoint.sh /etc/puppetlabs/puppet/r10k_hiera_entrypoint.sh;
               cp /tmp/puppet/configmap/r10k_hiera_cronjob.sh /etc/puppetlabs/puppet/r10k_hiera_cronjob.sh;
               cp /tmp/puppet/configmap/r10k_hiera.yaml /etc/puppetlabs/puppet/r10k_hiera.yaml;
+              {{- if not .Values.global.rootless }}
               chown {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /etc/puppetlabs/puppet/r10k_hiera_entrypoint.sh /etc/puppetlabs/puppet/r10k_hiera_cronjob.sh /etc/puppetlabs/puppet/r10k_hiera.yaml;
+              {{- end }}
               chmod +x /etc/puppetlabs/puppet/r10k_hiera_entrypoint.sh /etc/puppetlabs/puppet/r10k_hiera_cronjob.sh;
               {{- end }}
               {{- end }}
               {{- if .Values.hiera.config }}
               cp /tmp/puppet/configmap/hiera.yaml /etc/puppetlabs/puppet/hiera.yaml;
+              {{- if not .Values.global.rootless }}
               chown {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /etc/puppetlabs/puppet/hiera.yaml;
               {{- end }}
+              {{- end }}
               cp /tmp/puppet/configmap/site.pp /etc/puppetlabs/puppet/manifests/site.pp;
+              {{- if not .Values.global.rootless }}
               chown {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /etc/puppetlabs/puppet/manifests/site.pp;
+              {{- end }}
               {{- if or (.Values.hiera.eyaml.public_key) (.Values.hiera.eyaml.private_key) (.Values.hiera.eyaml.existingMap) (.Values.hiera.eyaml.existingSecret) }}
               cp /tmp/puppet/configmap/eyaml/*private_key.pkcs7.pem /etc/puppetlabs/puppet/eyaml/keys/;
+              {{- if not .Values.global.rootless }}
               chown {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /etc/puppetlabs/puppet/eyaml/keys/*private_key.pkcs7.pem;
+              {{- end }}
               cp /tmp/puppet/configmap/eyaml/*public_key.pkcs7.pem /etc/puppetlabs/puppet/eyaml/keys/;
+              {{- if not .Values.global.rootless }}
               chown {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /etc/puppetlabs/puppet/eyaml/keys/*public_key.pkcs7.pem;
+              {{- end }}
               {{- end }}
               {{- if .Values.puppetserver.extraInitArgs }}
               {{- .Values.puppetserver.extraInitArgs | nindent 14 }}
               {{- end }}
               mkdir -p /opt/puppetlabs/server/data/puppetserver/dropsonde/bin/;
               touch /opt/puppetlabs/server/data/puppetserver/dropsonde/bin/dropsonde;
+              {{- if not .Values.global.rootless }}
               chown {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} -R /opt/puppetlabs/server/data/puppetserver/;
+              {{- end }}
+              {{- if not .Values.global.rootless }}
               chmod +x /etc/puppetlabs/puppetserver;
+              {{- end }}
+              {{- if not .Values.global.rootless }}
               chown -R {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /etc/puppetlabs;
+              {{- end }}
 
+              {{- if and .Values.global.rootless .Values.puppetserver.persistence.data.enabled }}
+              cp -Rn /opt/puppetlabs/server/data/puppetserver/. /runtime-data/;
+              {{- end }}
           securityContext:
             runAsUser: 0
             runAsNonRoot: false
@@ -199,7 +221,7 @@ spec:
             {{- end }}
             {{- if eq .Values.puppetserver.persistence.data.enabled true }}
             - name: puppet-serverdata-storage
-              mountPath: /opt/puppetlabs/server/data/puppetserver/
+              mountPath: {{ ternary "/runtime-data/" "/opt/puppetlabs/server/data/puppetserver/" .Values.global.rootless }}
             {{- end }}
       {{- end }}
       containers:

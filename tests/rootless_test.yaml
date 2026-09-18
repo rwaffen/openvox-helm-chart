@@ -1,0 +1,42 @@
+suite: rootless initialization
+templates:
+  - puppetdb-deployment.yaml
+  - puppetserver-deployment-masters.yaml
+  - hiera-configmap.yaml
+  - r10k-code.configmap.yaml
+  - r10k-hiera.configmap.yaml
+  - rootless-validation.yaml
+tests:
+  - it: retains database directory setup without ownership changes
+    template: puppetdb-deployment.yaml
+    set:
+      global.rootless: true
+    asserts:
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: mkdir -p
+      - notMatchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: chown
+  - it: seeds persistent server data without overwriting it
+    template: puppetserver-deployment-masters.yaml
+    set:
+      global.rootless: true
+      puppetserver.persistence.data.enabled: true
+    asserts:
+      - notMatchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: chown
+      - matchRegex:
+          path: spec.template.spec.initContainers[0].args[0]
+          pattern: cp -Rn .*/runtime-data/
+      - notExists:
+          path: spec.template.spec.containers[0].command
+  - it: rejects the root-dependent legacy non-root mode
+    template: rootless-validation.yaml
+    set:
+      global.rootless: true
+      global.runAsNonRoot: true
+    asserts:
+      - failedTemplate:
+          errorMessage: global.rootless uses the image entrypoint; leave the legacy global.runAsNonRoot setting false
