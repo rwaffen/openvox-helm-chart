@@ -6,6 +6,8 @@
 ##
 ---
 global:
+  openshift:
+    sccName: "" # Optionally grant use of an existing SCC to chart service accounts.
   runAsNonRoot: false
 
   imagePullSecrets:

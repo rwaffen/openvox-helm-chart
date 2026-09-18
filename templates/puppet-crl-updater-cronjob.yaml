@@ -25,6 +25,9 @@ spec:
     spec:
       template:
         spec:
+          {{- if .Values.puppetserver.serviceAccount.enabled }}
+          serviceAccountName: {{ include "puppetserver.serviceAccountName" . }}
+          {{- end }}
           restartPolicy: OnFailure
           containers:
             - name: crl-updater

@@ -1,0 +1,63 @@
+{{- with .Values.global.openshift.sccName }}
+{{- if not ($.Capabilities.APIVersions.Has "security.openshift.io/v1") }}
+{{- fail "global.openshift.sccName requires the security.openshift.io/v1 API" }}
+{{- end }}
+{{- if not $.Values.puppetserver.serviceAccount.enabled }}
+{{- fail "SCC binding requires puppetserver.serviceAccount.enabled" }}
+{{- end }}
+{{- if and $.Values.puppetdb.enabled (not $.Values.puppetdb.serviceAccount.enabled) }}
+{{- fail "SCC binding requires puppetdb.serviceAccount.enabled" }}
+{{- end }}
+{{- if and $.Values.puppetserver.masters.backup.enabled (not $.Values.puppetserver.masters.backup.serviceAccount.enabled) }}
+{{- fail "SCC binding requires puppetserver.masters.backup.serviceAccount.enabled" }}
+{{- end }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "puppetserver.fullname" $ }}-scc
+  namespace: {{ $.Release.Namespace }}
+  {{- if or $.Values.puppetserver.preGeneratedCertsJob.enabled $.Values.singleCA.enabled $.Values.global.runAsNonRoot }}
+  annotations:
+    helm.sh/hook: pre-install
+    helm.sh/hook-weight: "-9"
+  {{- end }}
+rules:
+  - apiGroups: [security.openshift.io]
+    resources: [securitycontextconstraints]
+    resourceNames: [{{ . | quote }}]
+    verbs: [use]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "puppetserver.fullname" $ }}-scc
+  namespace: {{ $.Release.Namespace }}
+  {{- if or $.Values.puppetserver.preGeneratedCertsJob.enabled $.Values.singleCA.enabled $.Values.global.runAsNonRoot }}
+  annotations:
+    helm.sh/hook: pre-install
+    helm.sh/hook-weight: "-8"
+  {{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "puppetserver.fullname" $ }}-scc
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "puppetserver.serviceAccountName" $ }}
+    namespace: {{ $.Release.Namespace }}
+  {{- if $.Values.puppetdb.enabled }}
+  - kind: ServiceAccount
+    name: {{ include "puppetdb.serviceAccountName" $ }}
+    namespace: {{ $.Release.Namespace }}
+  {{- end }}
+  {{- if and $.Values.customPostgresql $.Values.customPostgresql.enabled }}
+  - kind: ServiceAccount
+    name: {{ default (printf "%s-postgresql" (include "puppetserver.fullname" $)) $.Values.customPostgresql.serviceAccount.name }}
+    namespace: {{ $.Release.Namespace }}
+  {{- end }}
+  {{- if $.Values.puppetserver.masters.backup.enabled }}
+  - kind: ServiceAccount
+    name: {{ include "backup.serviceAccountName" $ }}
+    namespace: {{ $.Release.Namespace }}
+  {{- end }}
+{{- end }}

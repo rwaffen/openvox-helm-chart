@@ -1,0 +1,33 @@
+# Apply with the security-context and rootless-initialization changes.
+global:
+  rootless: true
+  runAsNonRoot: false
+  securityContexts:
+    profile: restricted
+
+puppetserver:
+  serviceAccount:
+    enabled: true
+    create: true
+  psp:
+    create: false
+  persistence:
+    data:
+      enabled: true
+  masters:
+    backup:
+      schedule: "0 */12 * * *"
+      serviceAccount:
+        enabled: true
+        create: true
+
+puppetdb:
+  serviceAccount:
+    enabled: true
+    create: true
+  psp:
+    create: false
+
+# Supply an external database or enable the custom PostgreSQL workload.
+postgresql:
+  enabled: false

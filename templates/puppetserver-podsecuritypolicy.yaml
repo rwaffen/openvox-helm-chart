@@ -1,4 +1,7 @@
 {{- if .Values.puppetserver.psp.create }}
+{{- if semverCompare ">=1.25-0" .Capabilities.KubeVersion.Version }}
+{{- fail "PodSecurityPolicy was removed in Kubernetes 1.25; use SCCs or Pod Security Admission" }}
+{{- end }}
 apiVersion: {{ include "podsecuritypolicy.apiVersion" . }}
 kind: PodSecurityPolicy
 metadata:

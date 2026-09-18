@@ -30,7 +30,9 @@ spec:
         {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
     spec:
-      # restartPolicy: OnFailure
+      {{- if .Values.puppetserver.serviceAccount.enabled }}
+      serviceAccountName: {{ include "puppetserver.serviceAccountName" . }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.r10k.podSecurityContext | nindent 8 }}
         runAsUser: {{ .Values.global.securityContext.runAsUser }}
