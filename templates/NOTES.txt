@@ -30,3 +30,15 @@ WARNING: you specified a eyaml keys inside the values.yaml and it unsecure
 
 If you need to get your password for PuppetDB and PostgreSQL:
 $ printf $(kubectl get secret --namespace {{ .Release.Namespace }} {{ template "puppetdb.secret" . }} -o jsonpath="{.data.password}" | base64 --decode);echo
+
+{{- if .Values.puppetserver.masters.route.enabled }}
+CA route: {{ .Values.puppetserver.masters.route.host }}:443 (TLS passthrough)
+Configure agents with ca_server={{ .Values.puppetserver.masters.route.host }} and ca_port=443.
+{{- if not .Values.puppetserver.compilers.enabled }}
+Configure server={{ .Values.puppetserver.masters.route.host }} and serverport=443.
+{{- end }}
+{{- end }}
+{{- if .Values.puppetserver.compilers.route.enabled }}
+Compiler route: {{ .Values.puppetserver.compilers.route.host }}:443 (TLS passthrough)
+Configure server={{ .Values.puppetserver.compilers.route.host }} and serverport=443.
+{{- end }}

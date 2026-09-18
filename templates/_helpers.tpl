@@ -707,6 +707,11 @@ Define puppetserver alternate SAN
 {{- if .Values.puppetserver.compilers.fqdns.alternateServerNames -}}
 {{- $san = print $san "," .Values.puppetserver.compilers.fqdns.alternateServerNames -}}
 {{- end -}}
+{{- range list .Values.puppetserver.masters.route .Values.puppetserver.compilers.route -}}
+{{- if .enabled -}}
+{{- $san = print $san "," .host -}}
+{{- end -}}
+{{- end -}}
 {{- printf "%s" $san -}}
 {{- end -}}
 
