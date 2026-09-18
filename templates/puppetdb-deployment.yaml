@@ -134,16 +134,20 @@ spec:
             - name: OPENVOXDB_POSTGRES_HOSTNAME
               value: "{{ include "postgresql.hostname" . }}"
             {{- end }}
+            {{- if not (hasKey .Values.puppetdb.extraEnv "OPENVOXDB_POSTGRES_DATABASE") }}
+            - name: OPENVOXDB_POSTGRES_DATABASE
+              value: {{ .Values.global.postgresql.auth.database | quote }}
+            {{- end }}
             - name: OPENVOXDB_POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "puppetdb.secret" . }}
-                  key: password
+                  name: {{ if .Values.customPostgresql.enabled }}{{ .Values.customPostgresql.auth.existingSecret }}{{ else }}{{ template "puppetdb.secret" . }}{{ end }}
+                  key: {{ if .Values.customPostgresql.enabled }}{{ .Values.customPostgresql.auth.passwordKey }}{{ else }}{{ .Values.global.postgresql.auth.secretKeys.userPasswordKey }}{{ end }}
             - name: OPENVOXDB_POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: {{ template "puppetdb.secret" . }}
-                  key: username
+                  name: {{ if .Values.customPostgresql.enabled }}{{ .Values.customPostgresql.auth.existingSecret }}{{ else }}{{ template "puppetdb.secret" . }}{{ end }}
+                  key: {{ if .Values.customPostgresql.enabled }}{{ .Values.customPostgresql.auth.usernameKey }}{{ else }}{{ .Values.global.postgresql.auth.secretKeys.usernameKey }}{{ end }}
             {{- range $key, $value := .Values.global.extraEnv }}
             - name: {{ $key }}
               value: "{{ $value }}"

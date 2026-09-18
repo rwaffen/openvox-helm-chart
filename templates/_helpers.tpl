@@ -746,7 +746,9 @@ Define puppetdb service Account name
 Return PostgreSQL host name
 */}}
 {{- define "postgresql.hostname" -}}
-{{- if .Values.postgresql.enabled }}
+{{- if .Values.customPostgresql.enabled }}
+{{- printf "%s-postgresql" (include "puppetserver.fullname" .) -}}
+{{- else if .Values.postgresql.enabled }}
 {{- if eq .Values.postgresql.architecture "standalone" -}}
 {{- printf "%s-%s" .Release.Name "postgresql-hl" | trimSuffix "-" -}}
 {{- else }}
