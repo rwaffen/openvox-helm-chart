@@ -16,6 +16,9 @@ spec:
   policyTypes:
     {{- toYaml .Values.puppetserver.compilers.networkPolicy.policyTypes | nindent 4 }}
   ingress:
+    {{- if dig "route" "enabled" false .Values.puppetserver.compilers }}
+    {{- include "openvox.network.router" (dict "root" . "port" .Values.puppetserver.compilers.service.ports.puppetserver.port) | nindent 4 }}
+    {{- end }}
     # Needed for the initial cert generation & puppetdb initContainer
     - from:
         - podSelector:
@@ -28,19 +31,7 @@ spec:
     {{- end }}
   egress:
     # needed to resolve kubernetes dns query
-    - to:
-      - namespaceSelector:
-          matchLabels:
-            kubernetes.io/metadata.name: kube-system
-        podSelector:
-          matchLabels:
-            k8s-app: kube-dns
-      ports:
-      - protocol: TCP
-        port: 53
-      - protocol: UDP
-        port: 53
-    # needed to resolve external dns query ( like proxy )
+    {{- include "openvox.network.dns" . | nindent 4 }}
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0

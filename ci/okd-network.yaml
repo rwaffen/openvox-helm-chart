@@ -1,0 +1,23 @@
+global:
+  networkPolicy:
+    dnsNamespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: openshift-dns
+    dnsPodSelector:
+      matchLabels:
+        k8s-app: null
+        dns.operator.openshift.io/daemonset-dns: default
+    dnsPorts: [53, 5353]
+puppetserver:
+  masters:
+    networkPolicy:
+      enabled: true
+      additionnalIngressRules: []
+  compilers:
+    networkPolicy:
+      enabled: true
+      additionnalIngressRules: []
+puppetdb:
+  networkPolicy:
+    enabled: true
+    additionnalIngressRules: []

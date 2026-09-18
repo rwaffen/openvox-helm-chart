@@ -1,5 +1,9 @@
 # HELM Chart for OpenVox Server
 
+## OKD
+
+See [OKD deployment](docs/okd.md) and [validation](docs/okd-testing.md) for the combined OKD changes.
+
 ## Introduction
 
 This chart bootstraps OpenVox Server and its components on a Kubernetes cluster using the Helm package manager.

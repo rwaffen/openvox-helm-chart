@@ -31,10 +31,10 @@ spec:
       port: {{ .Values.openvoxview.port }}
       targetPort: {{ .Values.openvoxview.service.targetPort }}
     {{- end }}
-    {{- if .Values.metrics.prometheus.enabled }}
+    {{- if .Values.metrics.prometheus.puppetdb.enabled }}
     - name: metrics
-      port: {{ .Values.metrics.prometheus.port }}
-      targetPort: {{ .Values.metrics.prometheus.port }}
+      port: {{ .Values.metrics.prometheus.puppetdb.port }}
+      targetPort: {{ .Values.metrics.prometheus.puppetdb.port }}
     {{- end }}
   {{- if eq .Values.puppetdb.service.type "ClusterIP" }}
     {{- if hasKey .Values.puppetdb.service "clusterIP" }}

@@ -1,0 +1,38 @@
+suite: OKD network policies
+templates:
+  - puppetserver-masters.networkpolicy.yaml
+  - puppetdb.networkpolicy.yaml
+tests:
+  - it: allows both DNS protocols on the configured backend port
+    template: puppetserver-masters.networkpolicy.yaml
+    set:
+      puppetserver.masters.networkPolicy.enabled: true
+      global.networkPolicy.dnsNamespaceSelector.matchLabels.kubernetes\.io/metadata\.name: openshift-dns
+      global.networkPolicy.dnsPorts: [5353]
+    asserts:
+      - equal:
+          path: spec.egress[0].ports
+          value:
+            - {protocol: TCP, port: 5353}
+            - {protocol: UDP, port: 5353}
+  - it: allows router traffic to a server route
+    template: puppetserver-masters.networkpolicy.yaml
+    set:
+      puppetserver.masters.networkPolicy.enabled: true
+      puppetserver.masters.route.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports[0].port
+          value: 8140
+      - equal:
+          path: spec.ingress[0].from[0].namespaceSelector.matchLabels
+          value: {policy-group.network.openshift.io/ingress: ""}
+  - it: allows router traffic to the enabled UI port
+    template: puppetdb.networkpolicy.yaml
+    set:
+      puppetdb.networkPolicy.enabled: true
+      openvoxview.route.enabled: true
+    asserts:
+      - equal:
+          path: spec.ingress[0].ports[0].port
+          value: 5000
