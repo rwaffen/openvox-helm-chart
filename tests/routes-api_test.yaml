@@ -1,0 +1,10 @@
+suite: route API validation
+templates:
+  - routes.yaml
+tests:
+  - it: requires the route API
+    set:
+      openvoxview.route.enabled: true
+      openvoxview.route.host: view.example.test
+    asserts:
+      - failedTemplate: {errorMessage: Routes require the route.openshift.io/v1 API}

@@ -1,0 +1,50 @@
+{{- $root := . -}}
+{{- $endpoints := list
+  (dict "name" "masters" "config" .Values.puppetserver.masters "active" true "service" (include "puppetserver.puppetserver-masters.serviceName" .) "port" "puppetserver" "termination" "passthrough")
+  (dict "name" "compilers" "config" .Values.puppetserver.compilers "active" .Values.puppetserver.compilers.enabled "service" (include "puppetserver.puppetserver-compilers.serviceName" .) "port" "puppetserver" "termination" "passthrough")
+  (dict "name" "puppetboard" "config" .Values.puppetboard "active" (and .Values.puppetdb.enabled .Values.puppetboard.enabled) "service" (include "puppetdb.fullname" .) "port" "puppetboard" "termination" "edge")
+  (dict "name" "openvoxview" "config" .Values.openvoxview "active" (and .Values.puppetdb.enabled .Values.openvoxview.enabled) "service" (include "puppetdb.fullname" .) "port" "openvoxview" "termination" "edge") -}}
+{{- range $endpoint := $endpoints -}}
+{{- with $endpoint.config.route -}}
+{{- if .enabled -}}
+{{- if not $endpoint.active -}}
+{{- fail (printf "%s route requires its workload to be enabled" $endpoint.name) -}}
+{{- end -}}
+{{- if $endpoint.config.ingress.enabled -}}
+{{- fail (printf "%s: enable either ingress or route" $endpoint.name) -}}
+{{- end -}}
+{{- if not ($root.Capabilities.APIVersions.Has "route.openshift.io/v1") -}}
+{{- fail "Routes require the route.openshift.io/v1 API" -}}
+{{- end -}}
+{{- $host := required (printf "%s.route.host is required" $endpoint.name) .host -}}
+{{- if or (contains "/" $host) (contains ":" $host) -}}
+{{- fail "Route hosts must be DNS names without paths or ports" -}}
+{{- end }}
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: {{ include "puppetserver.fullname" $root }}-{{ $endpoint.name }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    {{- include "puppetserver.puppetserver.labels" $root | nindent 4 }}
+    {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  host: {{ $host | quote }}
+  to:
+    kind: Service
+    name: {{ $endpoint.service }}
+  port:
+    targetPort: {{ $endpoint.port }}
+  tls:
+    termination: {{ $endpoint.termination }}
+    insecureEdgeTerminationPolicy: {{ ternary "None" "Redirect" (eq $endpoint.termination "passthrough") }}
+{{- end -}}
+{{- end -}}
+{{- end -}}

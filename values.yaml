@@ -301,6 +301,12 @@ puppetserver:
       labels: {}
       loadBalancerIP: ""
 
+    route:
+      enabled: false
+      host: ""
+      annotations: {}
+      labels: {}
+
     ingress:
       ## If true, Puppet Server Masters Ingress will be created
       ##
@@ -528,6 +534,12 @@ puppetserver:
             protocol: TCP
         annotations: {}
         labels: {}
+
+    route:
+      enabled: false
+      host: ""
+      annotations: {}
+      labels: {}
 
     ingress:
       ## If true, Puppet Server Compilers Ingress will be created
@@ -960,6 +972,12 @@ puppetboard:
     capabilities:
       drop:
         - all
+  route:
+    enabled: false
+    host: ""
+    annotations: {}
+    labels: {}
+
   ingress:
     ## If true, Puppetboard Ingress will be created
     ##
@@ -1083,6 +1101,12 @@ openvoxview:
     capabilities:
       drop:
         - all
+  route:
+    enabled: false
+    host: ""
+    annotations: {}
+    labels: {}
+
   ingress:
     ## If true, OpenVox View Ingress will be created
     ##

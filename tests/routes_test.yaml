@@ -1,0 +1,36 @@
+suite: OpenShift routes
+templates:
+  - routes.yaml
+capabilities:
+  apiVersions:
+    - route.openshift.io/v1
+tests:
+  - it: creates no routes by default
+    asserts:
+      - hasDocuments: {count: 0}
+  - it: preserves Puppet client authentication with passthrough
+    set:
+      puppetserver.masters.route.enabled: true
+      puppetserver.masters.route.host: puppet.example.test
+    asserts:
+      - equal: {path: spec.tls.termination, value: passthrough}
+      - equal: {path: spec.port.targetPort, value: puppetserver}
+      - equal: {path: spec.host, value: puppet.example.test}
+  - it: terminates UI TLS at the router
+    set:
+      openvoxview.route.enabled: true
+      openvoxview.route.host: view.example.test
+    asserts:
+      - equal: {path: spec.tls.termination, value: edge}
+      - equal: {path: spec.port.targetPort, value: openvoxview}
+  - it: rejects simultaneous ingress and route
+    set:
+      puppetserver.masters.route.enabled: true
+      puppetserver.masters.ingress.enabled: true
+    asserts:
+      - failedTemplate: {errorMessage: 'masters: enable either ingress or route'}
+  - it: rejects a disabled compiler backend
+    set:
+      puppetserver.compilers.route.enabled: true
+    asserts:
+      - failedTemplate: {errorMessage: compilers route requires its workload to be enabled}

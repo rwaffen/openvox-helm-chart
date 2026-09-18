@@ -225,7 +225,7 @@ spec:
             - name: OPENVOXSERVER_PORT
               value: "{{ template "puppetserver.puppetserver-masters.port" . }}"
             - name: DNS_ALT_NAMES
-              value: "puppet,{{ template "puppetserver.puppetserver.agents-to-masters.serviceName" . }},{{ template "puppetserver.puppetserver-masters.serviceName" . }},{{.Values.puppetserver.masters.fqdns.alternateServerNames}},{{ template "puppetserver.puppetserver-compilers.serviceName" . }},{{.Values.puppetserver.compilers.fqdns.alternateServerNames}}"
+              value: "puppet,{{ template "puppetserver.puppetserver.agents-to-masters.serviceName" . }},{{ template "puppetserver.puppetserver-masters.serviceName" . }},{{.Values.puppetserver.masters.fqdns.alternateServerNames}},{{ template "puppetserver.puppetserver-compilers.serviceName" . }},{{.Values.puppetserver.compilers.fqdns.alternateServerNames}}{{ if .Values.puppetserver.compilers.route.enabled }},{{ .Values.puppetserver.compilers.route.host }}{{ end }}"
             - name: OPENVOXDB_SERVER_URLS
               value: https://{{ if .Values.singleCA.enabled}}{{.Values.singleCA.puppetdb.overrideHostname}}{{else }}{{ ( include "puppetdb.fullname" . ) }}{{end}}:8081
             - name: CA_ENABLED
