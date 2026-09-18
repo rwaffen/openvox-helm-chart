@@ -31,11 +31,7 @@ spec:
         {{- end }}
     spec:
       # restartPolicy: OnFailure
-      securityContext:
-        {{- toYaml .Values.r10k.podSecurityContext | nindent 8 }}
-        runAsUser: {{ .Values.global.securityContext.runAsUser }}
-        runAsGroup: 0 #The image only supports GID 0 see https://github.com/voxpupuli/container-r10k/blob/main/Containerfile#L89-L90
-        fsGroup: {{ .Values.global.securityContext.fsGroup }}
+      {{- include "openvox.securityContext" (dict "root" . "key" "r10k-pod" "pod" true "legacy" (include "openvox.security.r10kPod" . | fromYaml)) | nindent 6 }}
       containers:
         - name: r10k-code
           image: "{{ tpl .Values.r10k.image . }}:{{ tpl .Values.r10k.tag . }}"
@@ -109,8 +105,7 @@ spec:
             periodSeconds: 20
             successThreshold: 1
             timeoutSeconds: 5
-          securityContext:
-            {{- toYaml .Values.r10k.containerSecurityContext | nindent 12 }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "r10k" "pod" false "legacy" (include "openvox.security.r10kContainer" . | fromYaml)) | nindent 10 }}
         {{- if (include "hiera.enable" .) }}
         - name: r10k-hiera
           image: "{{ tpl .Values.r10k.image . }}:{{ tpl .Values.r10k.tag . }}"
@@ -185,8 +180,7 @@ spec:
             periodSeconds: 20
             successThreshold: 1
             timeoutSeconds: 5
-          securityContext:
-            {{- toYaml .Values.r10k.containerSecurityContext | nindent 12 }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "r10k" "pod" false "legacy" (include "openvox.security.r10kContainer" . | fromYaml)) | nindent 10 }}
         {{- end }}
       volumes:
         - name: puppet-code-storage

@@ -18,6 +18,7 @@ spec:
       labels:
         {{- include "puppetserver.puppet.labels" . | nindent 8 }}
     spec:
+      {{- include "openvox.securityContext" (dict "root" . "key" "preinstall-pod" "pod" true "legacy" dict) | nindent 6 }}
       restartPolicy: Never
       {{- if .Values.puppetserver.serviceAccount.enabled }}
       serviceAccountName: {{ include "puppetserver.serviceAccountName" . }}
@@ -98,25 +99,7 @@ spec:
             - name: puppet-serverdata-storage
               mountPath: /opt/puppetlabs/server/data/puppetserver/
             {{- end}}
-          securityContext:
-            runAsUser: 0
-            runAsNonRoot: false
-            capabilities:
-              drop:
-                - all
-              add:
-                - CAP_CHOWN
-                - CAP_SETUID
-                - CAP_SETGID
-                - CAP_DAC_OVERRIDE
-                - CAP_AUDIT_WRITE
-                - CAP_FOWNER
-                - CHOWN
-                - SETUID
-                - SETGID
-                - DAC_OVERRIDE
-                - AUDIT_WRITE
-                - FOWNER
+          {{- include "openvox.securityContext" (dict "root" . "key" "server-init" "pod" false "legacy" (include "openvox.security.rootInit" . | fromYaml)) | nindent 10 }}
           {{- end }}
       containers:
         {{- if or .Values.puppetserver.preGeneratedCertsJob.enabled .Values.singleCA.enabled }}
@@ -170,11 +153,7 @@ spec:
               mountPath: /crl
             {{- end }}
             {{- end }}
-          {{- if .Values.global.runAsNonRoot }}
-          securityContext:
-            runAsUser: {{ .Values.global.securityContext.runAsUser }}
-            runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
-          {{- end }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "certificate-init" "pod" false "legacy" (include "openvox.security.identity" . | fromYaml)) | nindent 10 }}
         {{- if and .Values.puppetdb.enabled .Values.puppetserver.preGeneratedCertsJob.importPuppetdb }}
         - name: copy-ro-puppetdb-certs
           image: "{{.Values.puppetdb.image}}:{{.Values.puppetdb.tag}}"
@@ -228,11 +207,7 @@ spec:
               mountPath: /crl
             {{- end }}
             {{- end }}
-          {{- if .Values.global.runAsNonRoot }}
-          securityContext:
-            runAsUser: {{ .Values.global.securityContext.runAsUser }}
-            runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
-          {{- end }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "certificate-init" "pod" false "legacy" (include "openvox.security.identity" . | fromYaml)) | nindent 10 }}
         {{- end }}
         {{- end }}
         {{- if .Values.global.runAsNonRoot }}
@@ -304,25 +279,7 @@ spec:
               mountPath: /docker-custom-entrypoint.d/{{ $key }}
               subPath: {{ $key }}
             {{- end }}
-          securityContext:
-            runAsUser: 0
-            runAsNonRoot: false
-            capabilities:
-              drop:
-                - all
-              add:
-                - CAP_CHOWN
-                - CAP_SETUID
-                - CAP_SETGID
-                - CAP_DAC_OVERRIDE
-                - CAP_AUDIT_WRITE
-                - CAP_FOWNER
-                - CHOWN
-                - SETUID
-                - SETGID
-                - DAC_OVERRIDE
-                - AUDIT_WRITE
-                - FOWNER
+          {{- include "openvox.securityContext" (dict "root" . "key" "server-init" "pod" false "legacy" (include "openvox.security.rootInit" . | fromYaml)) | nindent 10 }}
         {{- end }}
       hostAliases:
         - ip: 127.0.0.1

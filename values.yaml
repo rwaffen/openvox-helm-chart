@@ -6,6 +6,13 @@
 ##
 ---
 global:
+  securityContexts:
+    profile: legacy # Set restricted to use SCC-assigned identities.
+    pod: {}
+    container: {}
+    overrides: {} # Per-component overrides; see docs/security-contexts.md.
+    omit: [] # Component names whose securityContext is managed externally.
+
   runAsNonRoot: false
 
   imagePullSecrets:
@@ -607,14 +614,8 @@ puppetserver:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-        - all
+        - ALL
       add:
-        - CAP_CHOWN
-        - CAP_SETUID
-        - CAP_SETGID
-        - CAP_DAC_OVERRIDE
-        - CAP_AUDIT_WRITE
-        - CAP_FOWNER
         - CHOWN
         - SETUID
         - SETGID
@@ -643,7 +644,7 @@ r10k:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-        - all
+        - ALL
   updateStrategy:
     type: RollingUpdate
   code:
@@ -780,13 +781,8 @@ puppetdb:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-        - all
+        - ALL
       add:
-        - CAP_FOWNER
-        - CAP_CHOWN
-        - CAP_SETUID
-        - CAP_SETGID
-        - CAP_DAC_OVERRIDE
         - FOWNER
         - CHOWN
         - SETUID
@@ -959,7 +955,7 @@ puppetboard:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-        - all
+        - ALL
   ingress:
     ## If true, Puppetboard Ingress will be created
     ##
@@ -1082,7 +1078,7 @@ openvoxview:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-        - all
+        - ALL
   ingress:
     ## If true, OpenVox View Ingress will be created
     ##
@@ -1250,7 +1246,7 @@ singleCA:
       runAsNonRoot: true
       capabilities:
         drop:
-          - all
+          - ALL
 
   config: ''
   certificates:

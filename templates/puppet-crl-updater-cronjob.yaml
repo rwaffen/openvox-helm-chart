@@ -25,6 +25,7 @@ spec:
     spec:
       template:
         spec:
+          {{- include "openvox.securityContext" (dict "root" . "key" "crl-pod" "pod" true "legacy" dict) | nindent 10 }}
           restartPolicy: OnFailure
           containers:
             - name: crl-updater
@@ -68,10 +69,7 @@ spec:
                   mountPath: /etc/puppetlabs/puppet/
                 - name: puppetdb-storage
                   mountPath: /opt/puppetlabs/server/data/puppetdb
-              securityContext:
-                runAsUser: {{ .Values.global.securityContext.runAsUser }}
-                runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
-                {{- toYaml .Values.singleCA.crl.securityContext | nindent 16 }}
+              {{- include "openvox.securityContext" (dict "root" . "key" "crl" "pod" false "legacy" (include "openvox.security.crl" . | fromYaml)) | nindent 14 }}
           volumes:
             - name: crl-volume
               configMap:

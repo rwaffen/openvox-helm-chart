@@ -41,6 +41,7 @@ spec:
         {{- toYaml .Values.puppetdb.podAnnotations | nindent 8 }}
         {{- end }}
     spec:
+      {{- include "openvox.securityContext" (dict "root" . "key" "database-pod" "pod" true "legacy" dict) | nindent 6 }}
       hostname: puppetdb
       {{- if .Values.puppetdb.serviceAccount.enabled }}
       serviceAccountName: {{ include "puppetdb.serviceAccountName" . }}
@@ -49,25 +50,7 @@ spec:
         - name: setup-dirs
           image: "{{.Values.global.curl.image}}:{{.Values.global.curl.tag}}"
           imagePullPolicy: {{.Values.global.curl.imagePullPolicy}}
-          securityContext:
-            runAsUser: 0
-            runAsNonRoot: false
-            capabilities:
-              drop:
-                - all
-              add:
-                - CAP_CHOWN
-                - CAP_SETUID
-                - CAP_SETGID
-                - CAP_DAC_OVERRIDE
-                - CAP_AUDIT_WRITE
-                - CAP_FOWNER
-                - CHOWN
-                - SETUID
-                - SETGID
-                - DAC_OVERRIDE
-                - AUDIT_WRITE
-                - FOWNER
+          {{- include "openvox.securityContext" (dict "root" . "key" "database-init" "pod" false "legacy" (include "openvox.security.rootInit" . | fromYaml)) | nindent 10 }}
           command: [ "sh", "-c" ]
           args:
             - mkdir -p /opt/puppetlabs/server/data/puppetdb/logs;
@@ -86,11 +69,7 @@ spec:
         - name: pgchecker
           image: "{{.Values.global.pgchecker.image}}:{{.Values.global.pgchecker.tag}}"
           imagePullPolicy: {{.Values.global.pgchecker.imagePullPolicy}}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
+          {{- include "openvox.securityContext" (dict "root" . "key" "pgchecker" "pod" false "legacy" (include "openvox.security.waiter" . | fromYaml)) | nindent 10 }}
           command:
             - sh
             - -c
@@ -110,11 +89,7 @@ spec:
         - name: wait-puppetserver
           image: "{{.Values.global.curl.image}}:{{.Values.global.curl.tag}}"
           imagePullPolicy: {{.Values.global.curl.imagePullPolicy}}
-          securityContext:
-            allowPrivilegeEscalation: false
-            runAsUser: 1000
-            runAsGroup: 1000
-            runAsNonRoot: true
+          {{- include "openvox.securityContext" (dict "root" . "key" "wait-server" "pod" false "legacy" (include "openvox.security.waiter" . | fromYaml)) | nindent 10 }}
           command:
             - sh
             - -c
@@ -202,8 +177,7 @@ spec:
               mountPath: /etc/puppetlabs/puppetdb/conf.d/{{ $key }}
               subPath: {{ $key }}
             {{- end }}
-          securityContext:
-            {{- toYaml .Values.puppetdb.securityContext | nindent 12 }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "database" "pod" false "legacy" (include "openvox.security.database" . | fromYaml)) | nindent 10 }}
         {{- if .Values.puppetboard.enabled }}
         - name: puppetboard
           image: "{{.Values.puppetboard.image}}:{{.Values.puppetboard.tag}}"
@@ -248,10 +222,7 @@ spec:
           ports:
             - name: puppetboard
               containerPort: {{ .Values.puppetboard.port }}
-          securityContext:
-            {{- toYaml .Values.puppetboard.securityContext | nindent 12 }}
-            runAsUser: {{ .Values.global.securityContext.runAsUser }}
-            runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "puppetboard" "pod" false "legacy" (include "openvox.security.puppetboard" . | fromYaml)) | nindent 10 }}
           volumeMounts:
             - name: puppetdb-storage
               mountPath: /opt/puppetlabs/server/data/puppetdb
@@ -299,10 +270,7 @@ spec:
           ports:
             - name: openvoxview
               containerPort: {{ .Values.openvoxview.port }}
-          securityContext:
-            {{- toYaml .Values.openvoxview.securityContext | nindent 12 }}
-            runAsUser: {{ .Values.global.securityContext.runAsUser }}
-            runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "openvoxview" "pod" false "legacy" (include "openvox.security.openvoxview" . | fromYaml)) | nindent 10 }}
           volumeMounts:
             - name: puppetdb-storage
               mountPath: /opt/puppetlabs/server/data/puppetdb
@@ -348,10 +316,7 @@ spec:
                 name: {{ .Values.puppetdb.extraEnvSecret }}
           {{- end }}
           command: ["sh", "-c", "/opt/puppetlabs/server/data/puppetdb/scripts/crl_entrypoint.sh" ]
-          securityContext:
-            runAsUser: {{ .Values.global.securityContext.runAsUser }}
-            runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
-            {{- toYaml .Values.singleCA.crl.securityContext | nindent 12 }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "crl" "pod" false "legacy" (include "openvox.security.crl" . | fromYaml)) | nindent 10 }}
           volumeMounts:
           - name: puppetdb-storage
             mountPath: /opt/puppetlabs/server/data/puppetdb
@@ -403,14 +368,7 @@ spec:
           ports:
             - name: metrics
               containerPort: {{ .Values.metrics.prometheus.puppetdb.port }}
-          securityContext:
-            runAsUser: 999
-            runAsGroup: 999
-            runAsNonRoot: true
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - all
+          {{- include "openvox.securityContext" (dict "root" . "key" "puppetdb-exporter" "pod" false "legacy" (include "openvox.security.databaseExporter" . | fromYaml)) | nindent 10 }}
           volumeMounts:
             - name: puppetdb-storage
               mountPath: /opt/puppetlabs/server/data/puppetdb
