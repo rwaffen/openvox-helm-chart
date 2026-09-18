@@ -1,0 +1,48 @@
+suite: SCC permissions
+templates:
+  - scc-rbac.yaml
+capabilities:
+  apiVersions: [security.openshift.io/v1]
+tests:
+  - it: creates no SCC permissions by default
+    asserts:
+      - hasDocuments: {count: 0}
+  - it: grants only use of the named SCC
+    set:
+      global.openshift.sccName: site-restricted
+      puppetserver.serviceAccount.enabled: true
+      puppetdb.serviceAccount.enabled: true
+    asserts:
+      - hasDocuments: {count: 2}
+      - equal:
+          path: rules[0]
+          value:
+            apiGroups: [security.openshift.io]
+            resources: [securitycontextconstraints]
+            resourceNames: [site-restricted]
+            verbs: [use]
+        documentIndex: 0
+      - lengthEqual:
+          path: subjects
+          count: 2
+        documentIndex: 1
+  - it: refuses to grant SCC use to the default service account
+    set:
+      global.openshift.sccName: site-restricted
+    asserts:
+      - failedTemplate: {errorMessage: SCC binding requires puppetserver.serviceAccount.enabled}
+  - it: includes the chart-native database account when configured
+    set:
+      global.openshift.sccName: site-restricted
+      puppetserver.serviceAccount.enabled: true
+      puppetdb.serviceAccount.enabled: true
+      customPostgresql.enabled: true
+      customPostgresql.serviceAccount.name: site-postgresql
+    asserts:
+      - contains:
+          path: subjects
+          content:
+            kind: ServiceAccount
+            name: site-postgresql
+            namespace: NAMESPACE
+        documentIndex: 1

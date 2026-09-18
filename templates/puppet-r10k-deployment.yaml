@@ -30,7 +30,9 @@ spec:
         {{- toYaml .Values.podAnnotations | nindent 8 }}
         {{- end }}
     spec:
-      # restartPolicy: OnFailure
+      {{- if .Values.puppetserver.serviceAccount.enabled }}
+      serviceAccountName: {{ include "puppetserver.serviceAccountName" . }}
+      {{- end }}
       {{- include "openvox.securityContext" (dict "root" . "key" "r10k-pod" "pod" true "legacy" (include "openvox.security.r10kPod" . | fromYaml)) | nindent 6 }}
       containers:
         - name: r10k-code

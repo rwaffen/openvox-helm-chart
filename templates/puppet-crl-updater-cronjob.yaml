@@ -26,6 +26,9 @@ spec:
       template:
         spec:
           {{- include "openvox.securityContext" (dict "root" . "key" "crl-pod" "pod" true "legacy" dict) | nindent 10 }}
+          {{- if .Values.puppetserver.serviceAccount.enabled }}
+          serviceAccountName: {{ include "puppetserver.serviceAccountName" . }}
+          {{- end }}
           restartPolicy: OnFailure
           containers:
             - name: crl-updater
