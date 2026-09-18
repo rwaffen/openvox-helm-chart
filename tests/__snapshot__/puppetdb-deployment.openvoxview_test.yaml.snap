@@ -66,18 +66,13 @@ should include openvoxview sidecar when enabled:
                 allowPrivilegeEscalation: false
                 capabilities:
                   add:
-                    - CAP_FOWNER
-                    - CAP_CHOWN
-                    - CAP_SETUID
-                    - CAP_SETGID
-                    - CAP_DAC_OVERRIDE
                     - FOWNER
                     - CHOWN
                     - SETUID
                     - SETGID
                     - DAC_OVERRIDE
                   drop:
-                    - all
+                    - ALL
               volumeMounts:
                 - mountPath: /opt/puppetlabs/server/data/puppetdb
                   name: puppetdb-storage
@@ -110,7 +105,7 @@ should include openvoxview sidecar when enabled:
                 allowPrivilegeEscalation: false
                 capabilities:
                   drop:
-                    - all
+                    - ALL
                 runAsGroup: 64604
                 runAsNonRoot: true
                 runAsUser: 64604
@@ -141,12 +136,6 @@ should include openvoxview sidecar when enabled:
               securityContext:
                 capabilities:
                   add:
-                    - CAP_CHOWN
-                    - CAP_SETUID
-                    - CAP_SETGID
-                    - CAP_DAC_OVERRIDE
-                    - CAP_AUDIT_WRITE
-                    - CAP_FOWNER
                     - CHOWN
                     - SETUID
                     - SETGID
@@ -154,7 +143,7 @@ should include openvoxview sidecar when enabled:
                     - AUDIT_WRITE
                     - FOWNER
                   drop:
-                    - all
+                    - ALL
                 runAsNonRoot: false
                 runAsUser: 0
               volumeMounts:

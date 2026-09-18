@@ -41,11 +41,13 @@ spec:
                   matchLabels:
                     {{- include "puppetserver.puppetserver.matchLabels" . | nindent 20 }}
                 topologyKey: kubernetes.io/hostname
+          {{- include "openvox.securityContext" (dict "root" . "key" "backup-pod" "pod" true "legacy" dict) | nindent 10 }}
           restartPolicy: OnFailure
           containers:
           - name: restic-backup
             image: "{{ .Values.puppetserver.masters.backup.image }}:{{ .Values.puppetserver.masters.backup.tag }}"
             imagePullPolicy: {{ .Values.puppetserver.masters.backup.pullPolicy }}
+            {{- include "openvox.securityContext" (dict "root" . "key" "backup" "pod" false "legacy" dict) | nindent 12 }}
             command:
             - /bin/sh
             - -c

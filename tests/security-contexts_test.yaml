@@ -1,0 +1,86 @@
+suite: configurable security contexts
+templates:
+  - puppet-preInstall.job.yaml
+  - update-crl-configmap.yaml
+  - hiera-configmap.yaml
+  - r10k-code.configmap.yaml
+  - r10k-hiera.configmap.yaml
+  - puppetdb-deployment.yaml
+  - puppetserver-deployment-masters.yaml
+  - puppetserver-ca-backup-cronjob.yaml
+tests:
+  - it: lets SCC assign database identities and removes added capabilities
+    template: puppetdb-deployment.yaml
+    set:
+      global.securityContexts.profile: restricted
+    asserts:
+      - equal:
+          path: spec.template.spec.initContainers[0].securityContext.capabilities
+          value: {drop: [ALL]}
+      - notExists:
+          path: spec.template.spec.initContainers[0].securityContext.runAsUser
+      - notExists:
+          path: spec.template.spec.initContainers[1].securityContext.runAsUser
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+      - notExists:
+          path: spec.template.spec.containers[1].securityContext.runAsUser
+  - it: lets SCC assign server volume groups
+    template: puppetserver-deployment-masters.yaml
+    set:
+      global.securityContexts.profile: restricted
+    asserts:
+      - notExists:
+          path: spec.template.spec.securityContext.fsGroup
+      - equal:
+          path: spec.template.spec.securityContext.seccompProfile.type
+          value: RuntimeDefault
+  - it: supports explicit SCC overrides
+    template: puppetdb-deployment.yaml
+    set:
+      global.securityContexts.profile: restricted
+      global.securityContexts.overrides.database.runAsUser: 1001230000
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.runAsUser
+          value: 1001230000
+  - it: can omit a context supplied by admission
+    template: puppetdb-deployment.yaml
+    set:
+      global.securityContexts.omit: [database]
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[0].securityContext
+  - it: applies restricted settings to backups
+    template: puppetserver-ca-backup-cronjob.yaml
+    set:
+      global.securityContexts.profile: restricted
+      puppetserver.masters.backup.enabled: true
+    asserts:
+      - equal:
+          path: spec.jobTemplate.spec.template.spec.containers[0].securityContext.capabilities
+          value: {drop: [ALL]}
+  - it: hardens certificate import jobs without the legacy non-root switch
+    template: puppet-preInstall.job.yaml
+    set:
+      global.securityContexts.profile: restricted
+      singleCA.enabled: true
+      singleCA.crl.url: https://ca.example.test/crl.pem
+      singleCA.certificates.existingSecret.puppetserver: server-certs
+      singleCA.certificates.existingSecret.puppetdb: database-certs
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.capabilities.drop
+          value: [ALL]
+      - equal:
+          path: spec.template.spec.containers[1].securityContext.allowPrivilegeEscalation
+          value: false
+  - it: keeps pod-only r10k settings out of sidecar contexts
+    template: puppetserver-deployment-masters.yaml
+    set:
+      puppetserver.puppeturl: https://example.test/control.git
+      r10k.podSecurityContext.fsGroup: 12345
+    asserts:
+      - notExists:
+          path: spec.template.spec.containers[1].securityContext.fsGroup

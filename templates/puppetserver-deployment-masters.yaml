@@ -146,25 +146,7 @@ spec:
               cp -rp /etc/puppetlabs/puppetserver/conf.d/* /conf.d/;
               {{- end}}
               chown -R {{ .Values.global.securityContext.runAsUser }}:{{ .Values.global.securityContext.runAsGroup }} /etc/puppetlabs;
-          securityContext:
-            runAsUser: 0
-            runAsNonRoot: false
-            capabilities:
-              drop:
-                - all
-              add:
-                - CAP_CHOWN
-                - CAP_SETUID
-                - CAP_SETGID
-                - CAP_DAC_OVERRIDE
-                - CAP_AUDIT_WRITE
-                - CAP_FOWNER
-                - CHOWN
-                - SETUID
-                - SETGID
-                - DAC_OVERRIDE
-                - AUDIT_WRITE
-                - FOWNER
+          {{- include "openvox.securityContext" (dict "root" . "key" "server-init" "pod" false "legacy" (include "openvox.security.rootInit" . | fromYaml)) | nindent 10 }}
           volumeMounts:
             {{- if eq .Values.puppetserver.persistence.confd.enabled true }}
             - name: puppet-confd
@@ -340,18 +322,7 @@ spec:
             {{- end }}
             {{- end }}
             {{- end }}
-          securityContext:
-            {{- if .Values.global.runAsNonRoot }}
-            runAsUser: {{ .Values.global.securityContext.runAsUser }}
-            runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
-            runAsNonRoot: true
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - all
-            {{- else }}
-            {{- toYaml .Values.puppetserver.securityContext | nindent 12 }}
-            {{- end }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "server" "pod" false "legacy" (include "openvox.security.server" . | fromYaml)) | nindent 10 }}
         {{- if and .Values.puppetserver.puppeturl (not .Values.puppetserver.compilers.enabled) .Values.r10k.asSidecar }}
         # r10k Code Sidecar
         - name: r10k-code
@@ -385,11 +356,7 @@ spec:
             {{- range .Values.r10k.code.args }}
             - {{ . | quote }}
             {{- end }}
-          securityContext:
-            runAsUser: {{ .Values.global.securityContext.runAsUser }}
-            runAsGroup: 0 #The image only supports GID 0 see https://github.com/voxpupuli/container-r10k/blob/main/Containerfile#L89-L90
-            {{- toYaml .Values.r10k.podSecurityContext | nindent 12 }}
-            {{- toYaml .Values.r10k.containerSecurityContext | nindent 12 }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "r10k" "pod" false "legacy" (include "openvox.security.r10kCode" . | fromYaml)) | nindent 10 }}
           volumeMounts:
           {{- with .Values.r10k.code.viaSsh.credentials }}
           {{- if or (.existingSecret) (and (.ssh.value) (.known_hosts.value)) }}
@@ -460,11 +427,7 @@ spec:
                 name: {{ .Values.r10k.hiera.extraEnvSecret }}
           {{- end }}
           command: [ "sh", "-c", "/etc/puppetlabs/puppet/r10k_hiera_entrypoint.sh" ]
-          securityContext:
-            runAsUser: {{ .Values.global.securityContext.runAsUser }}
-            runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
-            {{- toYaml .Values.r10k.podSecurityContext | nindent 12 }}
-            {{- toYaml .Values.r10k.containerSecurityContext | nindent 12 }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "r10k-hiera" "pod" false "legacy" (include "openvox.security.r10kHiera" . | fromYaml)) | nindent 10 }}
           volumeMounts:
           {{- with .Values.r10k.hiera.viaSsh.credentials }}
           {{- if or (.existingSecret) (and (.ssh.value) (.known_hosts.value)) }}
@@ -530,10 +493,7 @@ spec:
                 name: {{ .Values.singleCA.crl.extraEnvSecret }}
           {{- end }}
           command: ["sh", "-c", "/etc/puppetlabs/puppet/ssl/crl_entrypoint.sh" ]
-          securityContext:
-            runAsUser: {{ .Values.global.securityContext.runAsUser }}
-            runAsGroup: {{ .Values.global.securityContext.runAsGroup }}
-            {{- toYaml .Values.singleCA.crl.securityContext | nindent 12 }}
+          {{- include "openvox.securityContext" (dict "root" . "key" "crl" "pod" false "legacy" (include "openvox.security.crl" . | fromYaml)) | nindent 10 }}
           volumeMounts:
           - name: puppet-puppet-storage
             mountPath: /etc/puppetlabs/puppet/
@@ -578,14 +538,7 @@ spec:
             - name: jmx-config
               mountPath: /jmx_exporter.yaml
               subPath: jmx_exporter.yaml
-          securityContext:
-            runAsUser: 64604
-            runAsGroup: 64604
-            runAsNonRoot: true
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - all
+          {{- include "openvox.securityContext" (dict "root" . "key" "jmx" "pod" false "legacy" (include "openvox.security.jmx" . | fromYaml)) | nindent 10 }}
         {{- end }}
         {{- with .Values.puppetserver.masters.extraContainers }}
           {{- toYaml . | nindent 8 }}
@@ -605,8 +558,7 @@ spec:
       {{- with .Values.global.imagePullSecrets }}
       {{ toYaml . }}
       {{- end }}
-      securityContext:
-        fsGroup: 64604   # "puppet" GID
+      {{- include "openvox.securityContext" (dict "root" . "key" "server-pod" "pod" true "legacy" (include "openvox.security.serverPod" . | fromYaml)) | nindent 6 }}
       volumes:
         {{- if (not .Values.puppetserver.compilers.enabled) }}
         - name: puppet-code-storage
