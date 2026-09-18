@@ -16,6 +16,19 @@ global:
   rootless: false # Use UID-compatible images and skip ownership changes.
   openshift:
     sccName: "" # Optionally grant use of an existing SCC to chart service accounts.
+  networkPolicy:
+    dnsNamespaceSelector:
+      matchLabels:
+        kubernetes.io/metadata.name: kube-system
+    dnsPodSelector:
+      matchLabels:
+        k8s-app: kube-dns
+    dnsPorts: [53]
+    routerNamespaceSelector:
+      matchLabels:
+        policy-group.network.openshift.io/ingress: ""
+    routerPodSelector: {}
+
   runAsNonRoot: false
 
   imagePullSecrets:

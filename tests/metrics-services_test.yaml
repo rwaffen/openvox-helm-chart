@@ -1,0 +1,22 @@
+suite: metrics service ports
+templates:
+  - puppetserver-service-masters.yaml
+  - puppetserver-service-compilers.yaml
+  - puppetdb-service.yaml
+tests:
+  - it: exposes the enabled JMX exporter through the server service
+    template: puppetserver-service-masters.yaml
+    set:
+      metrics.prometheus.jmx.enabled: true
+    asserts:
+      - contains:
+          path: spec.ports
+          content: {name: metrics, port: 5556, targetPort: metrics}
+  - it: exposes the enabled database exporter
+    template: puppetdb-service.yaml
+    set:
+      metrics.prometheus.puppetdb.enabled: true
+    asserts:
+      - contains:
+          path: spec.ports
+          content: {name: metrics, port: 9635, targetPort: 9635}

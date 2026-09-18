@@ -18,6 +18,11 @@ spec:
     - name: {{ $key }}
       {{- toYaml $value | nindent 6 }}
     {{- end }}
+    {{- if and .Values.metrics.prometheus.jmx.enabled (not (hasKey .Values.puppetserver.masters.service.ports "metrics")) }}
+    - name: metrics
+      port: {{ .Values.metrics.prometheus.jmx.port }}
+      targetPort: metrics
+    {{- end }}
   selector:
     {{- include "puppetserver.puppetserver.matchLabels" . | nindent 4 }}
 {{- if .Values.puppetserver.compilers.enabled }}

@@ -19,7 +19,7 @@ jobs:
         # pinned due to https://github.com/helm/helm/issues/31490
         with:
           version: 'v3.19.2'
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.13'
           check-latest: true
@@ -31,6 +31,16 @@ jobs:
           helm repo add bitnami https://charts.bitnami.com/bitnami
           helm plugin install https://github.com/helm-unittest/helm-unittest.git
           helm unittest ./
+
+      - name: Validate combined OKD profiles
+        run: |
+          if [[ -f values-okd.yaml && -f templates/_security-context.tpl && -f templates/custom-postgresql.yaml ]]; then
+            python -m pip install PyYAML==6.0.3
+            helm dependency build
+            python ci/validate-okd.py
+          else
+            echo "OKD integration checks require the combined topic branches."
+          fi
 
       - name: Create testing cluster
         uses: helm/kind-action@v1.14.0
